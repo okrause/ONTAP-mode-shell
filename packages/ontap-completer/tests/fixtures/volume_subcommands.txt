@@ -1,0 +1,9 @@
+activity-tracking>          The activity-tracking directory
+  analytics>                  The analytics directory
+  autosize                    Set/Display the autosize settings of the flexible
+                              volume.
+  clone>                      Manage FlexClones
+  create                      Create a new volume
+  delete                      Delete an existing volume
+  show                        Display a list of volumes
+  snapshot>                   Manage snapshots

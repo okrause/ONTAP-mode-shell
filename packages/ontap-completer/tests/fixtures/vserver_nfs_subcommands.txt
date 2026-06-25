@@ -1,0 +1,13 @@
+connected-clients>          The connected-clients directory
+  create                      Create an NFS configuration for a Vserver
+  delete                      Delete the NFS configuration of a Vserver
+  kerberos>                   The kerberos directory
+  modify                      Modify the NFS configuration of a Vserver
+  off                         Disable the NFS service of a Vserver
+  on                          Enable the NFS service of a Vserver
+  show                        Display the NFS configurations of Vservers
+  start                       Start the NFS service of a Vserver
+  status                      Display the status of the NFS service of a
+                              Vserver
+  stop                        Stop the NFS service of a Vserver
+  tls>                        The tls directory

@@ -1,0 +1,4 @@
+code: 404, message: {
+  "code":  404,
+  "message":  "entry doesn't exist"
+}

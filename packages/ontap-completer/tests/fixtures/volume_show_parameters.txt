@@ -1,0 +1,8 @@
+[ -encryption | -instance | -junction | -fields <fieldname>, ... ]
+  [ -vserver <vserver name> ]                   Vserver Name
+  [[-volume] <volume name>]                     Volume Name
+  [ -aggregate <aggregate name> ]               Aggregate Name
+  [ -state {online|restricted|offline|force-online|force-offline|mixed} ]
+                                                Volume State
+  [ -space-guarantee|-s {none|volume} ]         Space Guarantee Style
+  [ -fields <fieldname>, ... ]                  Selected Fields

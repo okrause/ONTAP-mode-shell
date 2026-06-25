@@ -1,0 +1,16 @@
+[ -instance | -fields <fieldname>, ... ]
+  [[-vserver] <vserver name>]                   Vserver
+  [ -access {true|false} ]                      General NFS Access
+  [ -v3 {enabled|disabled} ]                    NFS v3
+  [ -v4.0 {enabled|disabled} ]                  NFS v4.0
+  [ -udp {enabled|disabled} ]                   UDP Protocol
+  [ -tcp {enabled|disabled} ]                   TCP Protocol
+  [ -v4.0-read-delegation {enabled|disabled} ]  NFSv4.0 Read Delegation Support
+  [ -v4.0-write-delegation {enabled|disabled} ] NFSv4.0 Write Delegation
+                                                Support
+  [ -v4.1-pnfs {enabled|disabled} ]             NFSv4.1 Parallel NFS Support
+  [ -permitted-enc-types <NFS Kerberos Encryption Type>, ... ]
+                                                Permitted Kerberos Encryption
+                                                Types
+  [ -idle-connection-timeout {120..86400} ]     Idle Connection Timeout Value
+                                                (in seconds)

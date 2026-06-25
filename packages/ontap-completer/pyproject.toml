@@ -1,0 +1,21 @@
+[project]
+name = "ontap-completer"
+version = "0.1.0"
+description = "ONTAP CLI readline autocompletion for GCNV ONTAP-mode"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ontap_completion"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,0 +1,26 @@
+[project]
+name = "ontap-mode"
+version = "0.2.0"
+description = "Connect to Google Cloud NetApp Volume in ONTAP-mode"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "gcnv-client",
+    "google-auth>=2.48.0",
+    "gnureadline>=8.2.0; sys_platform == 'darwin'",
+    "ontap-completer",
+    "ontap-mode-shell",
+    "requests>=2.32.5",
+]
+
+[tool.uv.sources]
+gcnv-client = { workspace = true }
+ontap-completer = { workspace = true }
+ontap-mode-shell = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "packages/gcnv-client",
+    "packages/ontap-completer",
+    "packages/ontap-mode-shell",
+]

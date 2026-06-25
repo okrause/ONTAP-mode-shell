@@ -1,0 +1,15 @@
+[ -instance | -protocols | -fields <fieldname>, ... ]
+  [[-vserver] <vserver name>]                   Vserver
+  [ -type <vserver type> ]                      Vserver Type
+  [ -subtype <vserver subtype> ]                Vserver Subtype
+  [ -uuid <UUID> ]                              Vserver UUID
+  [ -rootvolume <volume name> ]                 Root Volume
+  [ -aggregate <aggregate name> ]               Aggregate
+  [ -admin-state {running|stopped|starting|stopping|initializing|deleting} ]
+                                                Vserver Admin State
+  [ -operational-state {running|stopped} ]      Vserver Operational State
+  [ -allowed-protocols {nfs|cifs|fcp|iscsi|ndmp|nvme|s3}, ... ]
+                                                Allowed Protocols
+  [ -is-repository {true|false} ]               Is Vserver with Infinite Volume
+  [ -max-volumes {<integer>|unlimited} ]        Limit on Maximum Number of
+                                                Volumes allowed

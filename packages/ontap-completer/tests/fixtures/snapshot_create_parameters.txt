@@ -1,0 +1,4 @@
+-vserver <vserver name>                  Vserver
+   [-volume] <volume name>                   Volume
+   [-snapshot] <snapshot name>               Snapshot
+  [[-comment] <text (size 0..255)>]          Comment
