@@ -44,7 +44,7 @@ class StaticBackend:
         self.help_calls.append(query)
         return self.help_responses.get(query, "")
 
-    def values_for_flag(self, flag: str) -> list[str]:
+    def values_for_flag(self, flag: str, *, line: str = "") -> list[str]:
         return self.values.get(flag, [])
 
 

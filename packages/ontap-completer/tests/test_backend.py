@@ -46,7 +46,7 @@ class TestBuildHelpQuery:
 class TestValueProviderRegistry:
     def test_register_and_lookup(self):
         reg = ValueProviderRegistry()
-        reg.register("-policy", lambda: ["default", "strict"])
+        reg.register("-policy", lambda _line: ["default", "strict"])
         assert reg.values_for_flag("-policy") == ["default", "strict"]
 
     def test_unknown_flag_returns_empty(self):
@@ -55,14 +55,14 @@ class TestValueProviderRegistry:
 
     def test_register_shared(self):
         reg = ValueProviderRegistry()
-        reg.register_shared(["-interface", "-lif"], lambda: ["lif1"])
+        reg.register_shared(["-interface", "-lif"], lambda _line: ["lif1"])
         assert reg.values_for_flag("-interface") == ["lif1"]
         assert reg.values_for_flag("-lif") == ["lif1"]
 
     def test_flag_must_start_with_dash(self):
         reg = ValueProviderRegistry()
         try:
-            reg.register("vserver", lambda: [])
+            reg.register("vserver", lambda _line: [])
             assert False, "expected ValueError"
         except ValueError:
             pass
@@ -75,7 +75,16 @@ class TestBuildDefaultRegistry:
                 "/svm/svms": [{"name": "svm-a"}],
                 "/storage/volumes": [{"name": "vol1"}],
                 "/network/ip/interfaces": [{"name": "lif1"}],
-                "/storage/snapshots": [{"name": "snap1"}],
+                "/storage/volumes?ontap_fields=name,uuid,svm.name": [
+                    {
+                        "name": "vol1",
+                        "uuid": "uuid-1",
+                        "svm": {"name": "svm-a"},
+                    }
+                ],
+                "/storage/volumes/uuid-1/snapshots?ontap_fields=name": [
+                    {"name": "snap1"}
+                ],
             }
         )
         reg = build_default_registry(pool)
@@ -84,13 +93,37 @@ class TestBuildDefaultRegistry:
         assert reg.values_for_flag("-aggregate") == ["aggr1", "aggr2"]
         assert reg.values_for_flag("-interface") == ["lif1"]
         assert reg.values_for_flag("-lif") == ["lif1"]
-        assert reg.values_for_flag("-snapshot") == ["snap1"]
+        assert reg.values_for_flag("-snapshot", line="snapshot show") == ["snap1"]
         assert "-vserver" in reg.registered_flags()
+
+    def test_snapshot_provider_filters_by_volume(self):
+        pool = FakePool(
+            get_responses={
+                "/storage/volumes?ontap_fields=name,uuid,svm.name": [
+                    {"name": "vol1", "uuid": "uuid-1", "svm": {"name": "svm1"}},
+                    {"name": "vol2", "uuid": "uuid-2", "svm": {"name": "svm1"}},
+                ],
+                "/storage/volumes/uuid-1/snapshots?ontap_fields=name": [
+                    {"name": "snap-a"}
+                ],
+                "/storage/volumes/uuid-2/snapshots?ontap_fields=name": [
+                    {"name": "snap-b"}
+                ],
+            }
+        )
+        reg = build_default_registry(pool)
+        assert set(reg.values_for_flag("-snapshot", line="snapshot show")) == {
+            "snap-a",
+            "snap-b",
+        }
+        assert reg.values_for_flag(
+            "-snapshot", line="snapshot show -volume vol1"
+        ) == ["snap-a"]
 
     def test_extra_provider_without_changing_defaults(self):
         pool = FakePool()
         reg = build_default_registry(pool)
-        reg.register("-policy", lambda: ["default"])
+        reg.register("-policy", lambda _line: ["default"])
         assert reg.values_for_flag("-policy") == ["default"]
 
 
@@ -106,7 +139,7 @@ class TestGcnvPoolBackend:
     def test_values_delegates_to_registry(self):
         pool = FakePool()
         reg = ValueProviderRegistry()
-        reg.register("-volume", lambda: ["v1"])
+        reg.register("-volume", lambda _line: ["v1"])
         backend = GcnvPoolBackend(pool, registry=reg)
         assert backend.values_for_flag("-volume") == ["v1"]
 
@@ -126,7 +159,7 @@ class TestSessionCacheBackend:
         pool = FakePool()
         calls = {"n": 0}
 
-        def provider() -> list[str]:
+        def provider(_line: str) -> list[str]:
             calls["n"] += 1
             return ["a"]
 

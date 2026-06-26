@@ -96,7 +96,7 @@ These flags get live values from the pool (via the GCNV REST API):
 | `-volume` | Volume names (`/storage/volumes`) |
 | `-aggregate` | Aggregate names (all SVMs in the pool) |
 | `-interface`, `-lif` | Network interface / LIF names (`/network/ip/interfaces`) |
-| `-snapshot` | Snapshot names (`/storage/snapshots`) |
+| `-snapshot` | Snapshot names per volume (`GET /storage/volumes/{uuid}/snapshots`); filtered by `-volume` / `-vserver` on the current line when present |
 
 For **other flags**, TAB can still complete values when `?` help declares an **enum** in the type syntax, e.g. `{online|offline}` → offers `online` and `offline`. Integer ranges and free-text parameters are not completed.
 

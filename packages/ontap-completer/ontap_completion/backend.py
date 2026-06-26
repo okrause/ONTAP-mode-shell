@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, Protocol
 
-from ontap_completion.providers import ValueProviderRegistry, build_default_registry
+from ontap_completion.providers import ValueProviderRegistry, build_default_registry, flag_value_in_line
 
 
 def build_help_query(line: str) -> str:
@@ -30,7 +30,7 @@ class CompletionBackend(Protocol):
         """Return raw ? help text for the given (possibly incomplete) command line."""
         ...
 
-    def values_for_flag(self, flag: str) -> list[str]:
+    def values_for_flag(self, flag: str, *, line: str = "") -> list[str]:
         """Return completion candidates for a flag value, or [] if unknown."""
         ...
 
@@ -60,8 +60,8 @@ class GcnvPoolBackend:
         raw = self._pool.ontap_cli(build_help_query(line))
         return normalize_cli_output(raw)
 
-    def values_for_flag(self, flag: str) -> list[str]:
-        return self._registry.values_for_flag(flag)
+    def values_for_flag(self, flag: str, *, line: str = "") -> list[str]:
+        return self._registry.values_for_flag(flag, line=line)
 
 
 class SessionCacheBackend:
@@ -83,10 +83,23 @@ class SessionCacheBackend:
             self._help_cache[query] = self._inner.help_for_line(line)
         return self._help_cache[query]
 
-    def values_for_flag(self, flag: str) -> list[str]:
-        if flag not in self._value_cache:
-            self._value_cache[flag] = self._inner.values_for_flag(flag)
-        return self._value_cache[flag]
+    def values_for_flag(self, flag: str, *, line: str = "") -> list[str]:
+        cache_key = _value_cache_key(flag, line)
+        if cache_key not in self._value_cache:
+            self._value_cache[cache_key] = self._inner.values_for_flag(
+                flag, line=line
+            )
+        return self._value_cache[cache_key]
+
+
+def _value_cache_key(flag: str, line: str) -> tuple[str, ...]:
+    if flag == "-snapshot":
+        return (
+            flag,
+            flag_value_in_line(line, "-volume") or "",
+            flag_value_in_line(line, "-vserver") or "",
+        )
+    return (flag,)
 
 
 def create_gcnv_session_backend(pool: OntapPoolProtocol) -> SessionCacheBackend:

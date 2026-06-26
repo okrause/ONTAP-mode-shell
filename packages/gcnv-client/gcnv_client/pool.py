@@ -141,3 +141,39 @@ class OntapModePool:
         if "error" in resp:
             return resp["error"]
         return resp
+
+    def snapshot_names(
+        self,
+        *,
+        volume: str | None = None,
+        vserver: str | None = None,
+    ) -> list[str]:
+        """Snapshot names via GET /storage/volumes/{uuid}/snapshots."""
+        volumes = self._matching_volumes(volume=volume, vserver=vserver)
+        names: list[str] = []
+        for vol in volumes:
+            snaps = self.ontap_get(
+                f"/storage/volumes/{vol['uuid']}/snapshots?ontap_fields=name"
+            )
+            if isinstance(snaps, list):
+                names.extend(str(record["name"]) for record in snaps)
+        return sorted(set(names))
+
+    def _matching_volumes(
+        self,
+        *,
+        volume: str | None = None,
+        vserver: str | None = None,
+    ) -> list[dict]:
+        raw = self.ontap_get("/storage/volumes?ontap_fields=name,uuid,svm.name")
+        volumes = raw if isinstance(raw, list) else []
+        if volume:
+            volumes = [item for item in volumes if item.get("name") == volume]
+        if vserver:
+            volumes = [
+                item
+                for item in volumes
+                if isinstance(item.get("svm"), dict)
+                and item["svm"].get("name") == vserver
+            ]
+        return [item for item in volumes if isinstance(item.get("uuid"), str)]

@@ -325,7 +325,7 @@ class OntapCompleter:
             return []
 
         partial = ctx.text
-        values = list(self._backend.values_for_flag(flag))
+        values = list(self._backend.values_for_flag(flag, line=ctx.active_segment))
         if not values:
             entry = self._parameter_entry_for_flag(ctx, flag)
             if entry is not None and entry.kind == ParamKind.SWITCH:
