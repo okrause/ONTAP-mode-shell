@@ -125,3 +125,8 @@ Parser rules and fixtures are documented in the repo’s `ontap-auto-completion.
 ## Debug
 
 Set `NETAPP_DEBUG=1` for verbose API logging (via `gcnv-client`).
+
+## Support
+This tool is not supported by NetApp or Google and provided as-is. Run at your own risk.
+
+If you experience any problems, please open a GitHub issue.
