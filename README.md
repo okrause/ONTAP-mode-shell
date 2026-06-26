@@ -7,13 +7,15 @@ The shell app lives in `packages/ontap-mode-shell/` (formerly `ontap_mode_shell.
 ## Prerequisites
 
 - Python 3.13+
-- [uv](https://docs.astral.sh/uv/)
+- [uv](https://docs.astral.sh/uv/) - An extremely fast Python package and project manager, written in Rust.
 - Google Cloud credentials: `gcloud auth application-default login`
 - A GCNV storage pool in ONTAP-mode
+- Runs on Linux or MacOS
 
 ## Install
 
 ```bash
+git clone https://github.com/okrause/ONTAP-mode-shell.git
 cd ONTAP-mode-shell
 uv sync
 ```
