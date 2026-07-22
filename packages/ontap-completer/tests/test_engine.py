@@ -264,6 +264,22 @@ class TestOntapCompleter:
         )
         assert matches == ["-vserver "]
 
+    def test_lun_map_path_flag_after_igroup(self, fixtures_dir: Path):
+        backend = StaticBackend(
+            {
+                build_help_query("lun map"): load_fixture(
+                    fixtures_dir, "lun_map_parameters.txt"
+                )
+            }
+        )
+        completer = OntapCompleter(backend)
+        line = "lun map -vserver gcnv-svm-01 -igroup test -pa"
+        beg = line.index("-pa")
+        matches = completer.completions_for(
+            LineContext(line, beg, beg + 3, "-pa")
+        )
+        assert matches == ["-path "]
+
     def test_missing_argument_after_trailing_space(self, fixtures_dir: Path):
         backend = StaticBackend(
             {

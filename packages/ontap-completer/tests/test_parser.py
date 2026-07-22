@@ -56,6 +56,17 @@ class TestClassifyResponse:
         assert detail is None
         assert not parse_subcommand_help(text)
 
+    def test_lun_map_or_group_flags(self, fixtures_dir):
+        entries = unique_parameter_flags(
+            parse_parameter_help(load_fixture(fixtures_dir, "lun_map_parameters.txt"))
+        )
+        by_name = {entry.name: entry for entry in entries}
+        assert "-path" in by_name
+        assert "-volume" in by_name
+        assert "-qtree" in by_name
+        assert by_name["-path"].help_text == "LUN Path"
+        assert by_name["-volume"].help_text == "Volume Name"
+
     def test_missing_argument(self, fixtures_dir):
         text = load_fixture(fixtures_dir, "missing_argument_vserver.txt")
         kind, detail = classify_response(text)

@@ -7,6 +7,7 @@ import re
 from ontap_completion.types import HelpEntry, ParamKind, ResponseKind
 
 MISSING_ARG_RE = re.compile(r"Missing required argument:\s+(-[\w-]+)")
+OR_GROUP_LINE_RE = re.compile(r"^\s*\{\s*[\[-]")
 SUBCOMMAND_LINE_RE = re.compile(r"^\s*([a-zA-Z][\w-]*)(>?)\s{2,}(.+)$")
 FLAG_TOKEN_RE = re.compile(r"-[\w.-]+")
 BARE_PARAM_LINE_RE = re.compile(
@@ -83,6 +84,45 @@ def parse_subcommand_help(text: str) -> list[HelpEntry]:
                     name=last.name,
                     help_text=f"{last.help_text} {cont}",
                     is_directory=last.is_directory,
+                )
+    return entries
+
+
+def _split_or_alternative_part(part: str) -> tuple[str, str]:
+    """Split one OR-group alternative into spec and description."""
+    part = part.strip()
+    chunks = re.split(r"\s{2,}", part, maxsplit=1)
+    if len(chunks) == 2:
+        return chunks[0].strip(), chunks[1].strip()
+    return part, ""
+
+
+def _parse_or_group_block(lines: list[str]) -> list[HelpEntry]:
+    """Parse a multi-line { alt | alt | ... } parameter OR-group."""
+    combined = "\n".join(lines)
+    start = combined.index("{")
+    end = combined.rindex("}")
+    inner = combined[start + 1 : end]
+    parts = re.split(r"(?:\n\s*\|\s*|\n\s+(?=[\[-]))", inner.strip())
+
+    entries: list[HelpEntry] = []
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+        spec, help_text = _split_or_alternative_part(part)
+        if not spec:
+            continue
+        spec = spec.removesuffix("}").strip()
+        parsed = _parse_param_part(spec, optional=False, help_text=help_text)
+        if parsed:
+            entries.extend(parsed)
+            continue
+        if spec.startswith("["):
+            inner_spec, doubly = _strip_bracket_content(spec)
+            if inner_spec:
+                entries.extend(
+                    _parse_param_entries(inner_spec, optional=doubly, help_text=help_text)
                 )
     return entries
 
@@ -241,8 +281,23 @@ def parse_parameter_help(text: str) -> list[HelpEntry]:
     """Parse parameter list from ? help (e.g. output of 'volume show ?')."""
     entries: list[HelpEntry] = []
     pending_help = ""
+    or_group_lines: list[str] | None = None
 
     for line in text.splitlines():
+        if or_group_lines is not None:
+            or_group_lines.append(line)
+            if "}" in line:
+                entries.extend(_parse_or_group_block(or_group_lines))
+                or_group_lines = None
+            continue
+
+        if OR_GROUP_LINE_RE.match(line):
+            if "}" in line:
+                entries.extend(_parse_or_group_block([line]))
+            else:
+                or_group_lines = [line]
+            continue
+
         parsed = _split_spec_and_help(line)
         if parsed:
             spec, help_text = parsed

@@ -314,7 +314,7 @@ class OntapCompleter:
         else:
             partial = ""
 
-        help_text = help_text or self._backend.help_for_line(ctx.help_query_line)
+        help_text = help_text or self._backend.help_for_line(ctx.parameter_help_query_line)
         flags = self._flag_names_from_help(help_text)
         names = [flag for flag in flags if not partial or flag.startswith(partial)]
         return _dedupe([f"{name} " for name in names])
