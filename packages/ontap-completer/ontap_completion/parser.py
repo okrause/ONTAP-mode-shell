@@ -7,7 +7,7 @@ import re
 from ontap_completion.types import HelpEntry, ParamKind, ResponseKind
 
 MISSING_ARG_RE = re.compile(r"Missing required argument:\s+(-[\w-]+)")
-SUBCOMMAND_LINE_RE = re.compile(r"^\s*(\S+?)(>?)\s{2,}(.+)$")
+SUBCOMMAND_LINE_RE = re.compile(r"^\s*([a-zA-Z][\w-]*)(>?)\s{2,}(.+)$")
 FLAG_TOKEN_RE = re.compile(r"-[\w.-]+")
 BARE_PARAM_LINE_RE = re.compile(
     r"^\s*(-[\w.-]+(?:\|[-\w.-]+)?\s+.+?)(?:\s{2,}(.+))?\s*$"
@@ -31,10 +31,14 @@ def classify_response(text: str) -> tuple[ResponseKind, str | None]:
             return ResponseKind.MISSING_ARGUMENT, m.group(1)
         return ResponseKind.ERROR, stripped.split("\n", 1)[0][:200]
 
+    param_entries = parse_parameter_help(stripped)
+    if param_entries and any(entry.name.startswith("-") for entry in param_entries):
+        return ResponseKind.PARAMETERS, None
+
     if parse_subcommand_help(stripped):
         return ResponseKind.SUBCOMMAND_LIST, None
 
-    if parse_parameter_help(stripped):
+    if param_entries:
         return ResponseKind.PARAMETERS, None
 
     return ResponseKind.UNKNOWN, stripped[:200]

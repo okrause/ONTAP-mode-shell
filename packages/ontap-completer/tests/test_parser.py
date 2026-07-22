@@ -49,6 +49,13 @@ class TestClassifyResponse:
         assert kind == ResponseKind.PARAMETERS
         assert detail is None
 
+    def test_or_group_parameter_help_not_subcommand_list(self, fixtures_dir):
+        text = load_fixture(fixtures_dir, "lun_map_parameters.txt")
+        kind, detail = classify_response(text)
+        assert kind == ResponseKind.PARAMETERS
+        assert detail is None
+        assert not parse_subcommand_help(text)
+
     def test_missing_argument(self, fixtures_dir):
         text = load_fixture(fixtures_dir, "missing_argument_vserver.txt")
         kind, detail = classify_response(text)

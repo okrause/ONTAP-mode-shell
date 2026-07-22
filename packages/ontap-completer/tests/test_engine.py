@@ -250,6 +250,20 @@ class TestOntapCompleter:
         )
         assert matches == ["-vserver "]
 
+    def test_partial_flag_with_or_group_parameter_help(self, fixtures_dir: Path):
+        backend = StaticBackend(
+            {
+                build_help_query("lun map"): load_fixture(
+                    fixtures_dir, "lun_map_parameters.txt"
+                )
+            }
+        )
+        completer = OntapCompleter(backend)
+        matches = completer.completions_for(
+            LineContext("lun map -vs", 8, 11, "-vs")
+        )
+        assert matches == ["-vserver "]
+
     def test_missing_argument_after_trailing_space(self, fixtures_dir: Path):
         backend = StaticBackend(
             {
