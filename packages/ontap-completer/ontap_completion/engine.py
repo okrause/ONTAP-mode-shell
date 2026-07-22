@@ -9,6 +9,7 @@ from enum import Enum
 from ontap_completion.backend import CompletionBackend
 from ontap_completion.parser import (
     classify_response,
+    parse_expansion_hint,
     parse_parameter_help,
     parse_subcommand_help,
     unique_parameter_flags,
@@ -199,6 +200,11 @@ class LineContext:
         return self.query_line
 
     @property
+    def command_path_probe_line(self) -> str:
+        """Active line through cursor (includes partial token) for ? lookup."""
+        return self.full_line[: self.endidx].replace("\n", "").rstrip()
+
+    @property
     def parameter_help_query_line(self) -> str:
         """Line for loading parameter metadata (command path only)."""
         tokens = self.active_before_cursor.split()
@@ -291,15 +297,51 @@ class OntapCompleter:
 
     def _complete_command_path(self, ctx: LineContext) -> list[str]:
         partial = ctx.text
-        help_text = self._backend.help_for_line(ctx.help_query_line)
+        probe_line = ctx.command_path_probe_line
+        parent_line = ctx.help_query_line
+
+        if partial and probe_line != parent_line:
+            help_text = self._lookup_command_help(probe_line, parent_line, partial)
+            matches = self._matches_from_command_help(ctx, help_text, partial)
+            if matches:
+                return matches
+            help_text = self._backend.help_for_line(parent_line)
+        else:
+            help_text = self._backend.help_for_line(parent_line)
+
+        return self._matches_from_command_help(ctx, help_text, partial)
+
+    def _lookup_command_help(
+        self, probe_line: str, parent_line: str, partial: str
+    ) -> str:
+        help_text = self._backend.help_for_line(probe_line)
+        kind, _ = classify_response(help_text)
+        if kind in (ResponseKind.ERROR, ResponseKind.UNKNOWN):
+            return self._backend.help_for_line(parent_line)
+        if kind in (
+            ResponseKind.PARAMETERS,
+            ResponseKind.MISSING_ARGUMENT,
+        ) and not partial.startswith("-"):
+            return self._backend.help_for_line(parent_line)
+        return help_text
+
+    def _matches_from_command_help(
+        self, ctx: LineContext, help_text: str, partial: str
+    ) -> list[str]:
         kind, _ = classify_response(help_text)
         if kind == ResponseKind.SUBCOMMAND_LIST:
             entries = parse_subcommand_help(help_text)
-            return _filter_prefix(
+            matches = _filter_prefix(
                 (entry.name for entry in entries),
                 partial,
                 trailing_space=True,
             )
+            if matches:
+                return matches
+            hint = parse_expansion_hint(help_text)
+            if hint and partial and hint.startswith(partial):
+                return [f"{hint} "]
+            return []
         if kind in (ResponseKind.PARAMETERS, ResponseKind.MISSING_ARGUMENT):
             return self._complete_flag_names(ctx, help_text=help_text)
         return []

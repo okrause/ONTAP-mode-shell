@@ -8,6 +8,7 @@ from ontap_completion.types import HelpEntry, ParamKind, ResponseKind
 
 MISSING_ARG_RE = re.compile(r"Missing required argument:\s+(-[\w-]+)")
 OR_GROUP_LINE_RE = re.compile(r"^\s*\{\s*[\[-]")
+EXPANSION_HINT_RE = re.compile(r"^\(([\w-]+)\)$")
 SUBCOMMAND_LINE_RE = re.compile(r"^\s*([a-zA-Z][\w-]*)(>?)\s{2,}(.+)$")
 FLAG_TOKEN_RE = re.compile(r"-[\w.-]+")
 BARE_PARAM_LINE_RE = re.compile(
@@ -86,6 +87,19 @@ def parse_subcommand_help(text: str) -> list[HelpEntry]:
                     is_directory=last.is_directory,
                 )
     return entries
+
+
+def parse_expansion_hint(text: str) -> str | None:
+    """Return ONTAP shortcut expansion from the first line, e.g. ``(export-policy)``."""
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        m = EXPANSION_HINT_RE.match(stripped)
+        if m:
+            return m.group(1)
+        break
+    return None
 
 
 def _split_or_alternative_part(part: str) -> tuple[str, str]:

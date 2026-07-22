@@ -2,6 +2,7 @@ import pytest
 
 from ontap_completion.parser import (
     classify_response,
+    parse_expansion_hint,
     parse_parameter_help,
     parse_subcommand_help,
     split_chained_line,
@@ -19,6 +20,20 @@ def fixtures_dir():
 
 def load_fixture(fixtures_dir, name: str) -> str:
     return (fixtures_dir / name).read_text(encoding="utf-8")
+
+
+class TestParseExpansionHint:
+    def test_export_policy_shortcut(self, fixtures_dir):
+        text = load_fixture(fixtures_dir, "export_policy_shortcut_help.txt")
+        assert parse_expansion_hint(text) == "export-policy"
+
+    def test_igroup_shortcut(self, fixtures_dir):
+        text = load_fixture(fixtures_dir, "igroup_shortcut_help.txt")
+        assert parse_expansion_hint(text) == "igroup"
+
+    def test_no_hint_when_subcommand_list(self, fixtures_dir):
+        text = load_fixture(fixtures_dir, "volume_subcommands.txt")
+        assert parse_expansion_hint(text) is None
 
 
 class TestSplitChainedLine:

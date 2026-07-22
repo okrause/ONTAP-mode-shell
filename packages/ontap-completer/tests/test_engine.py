@@ -153,18 +153,78 @@ class TestParseEnumValues:
 class TestOntapCompleter:
     def test_command_path_subcommands(self, fixtures_dir: Path):
         backend = StaticBackend(
-            {build_help_query("volume"): load_fixture(fixtures_dir, "volume_subcommands.txt")}
+            {
+                build_help_query("volume"): load_fixture(fixtures_dir, "volume_subcommands.txt"),
+                build_help_query("volume sh"): "",
+            }
         )
         completer = OntapCompleter(backend)
         matches = completer.completions_for(LineContext("volume sh", 7, 9, "sh"))
         assert matches == ["show "]
+
+    def test_unique_shortcut_expands_export_policy(self, fixtures_dir: Path):
+        backend = StaticBackend(
+            {
+                build_help_query("export-pol"): load_fixture(
+                    fixtures_dir, "export_policy_shortcut_help.txt"
+                ),
+            }
+        )
+        completer = OntapCompleter(backend)
+        matches = completer.completions_for(
+            LineContext("export-pol", 0, 10, "export-pol")
+        )
+        assert matches == ["export-policy "]
+        assert backend.help_calls == ["export-pol ?"]
+
+    def test_unique_shortcut_expands_igroup(self, fixtures_dir: Path):
+        backend = StaticBackend(
+            {
+                build_help_query("igr"): load_fixture(
+                    fixtures_dir, "igroup_shortcut_help.txt"
+                ),
+            }
+        )
+        completer = OntapCompleter(backend)
+        matches = completer.completions_for(LineContext("igr", 0, 3, "igr"))
+        assert matches == ["igroup "]
+
+    def test_ambiguous_shortcut_falls_back_to_parent(self, fixtures_dir: Path):
+        backend = StaticBackend(
+            {
+                build_help_query("expo"): load_fixture(
+                    fixtures_dir, "parse_error_unable.txt"
+                ),
+                build_help_query(""): load_fixture(
+                    fixtures_dir, "volume_subcommands.txt"
+                ),
+            }
+        )
+        completer = OntapCompleter(backend)
+        matches = completer.completions_for(LineContext("expo", 0, 4, "expo"))
+        assert matches == []
+
+    def test_unique_shortcut_children_after_full_path(self, fixtures_dir: Path):
+        backend = StaticBackend(
+            {
+                build_help_query("export-policy"): load_fixture(
+                    fixtures_dir, "export_policy_shortcut_help.txt"
+                ),
+                build_help_query("export-policy ru"): "",
+            }
+        )
+        completer = OntapCompleter(backend)
+        line = "export-policy ru"
+        matches = completer.completions_for(LineContext(line, 14, 16, "ru"))
+        assert matches == ["rule "]
 
     def test_hyphenated_subcommand_path_not_treated_as_flag(self, fixtures_dir: Path):
         backend = StaticBackend(
             {
                 build_help_query("vserver export-policy"): load_fixture(
                     fixtures_dir, "vserver_export_policy_subcommands.txt"
-                )
+                ),
+                build_help_query("vserver export-policy ru"): "",
             }
         )
         completer = OntapCompleter(backend)
@@ -328,17 +388,38 @@ class TestOntapCompleter:
         )
         assert matches == []
 
-    def test_chained_line_uses_full_query(self, fixtures_dir: Path):
+    def test_abbreviated_leaf_falls_back_when_probe_returns_parameters(
+        self, fixtures_dir: Path
+    ):
+        backend = StaticBackend(
+            {
+                build_help_query("igroup sh"): load_fixture(
+                    fixtures_dir, "volume_show_parameters.txt"
+                ),
+                build_help_query("igroup"): load_fixture(
+                    fixtures_dir, "igroup_shortcut_help.txt"
+                ),
+            }
+        )
+        completer = OntapCompleter(backend)
+        matches = completer.completions_for(LineContext("igroup sh", 7, 9, "sh"))
+        assert matches == ["show "]
+
+    def test_chained_line_probes_then_falls_back(self, fixtures_dir: Path):
         backend = StaticBackend(
             {
                 build_help_query("set advanced; volume"): load_fixture(
                     fixtures_dir, "volume_subcommands.txt"
-                )
+                ),
+                build_help_query("set advanced; volume sh"): "",
             }
         )
         completer = OntapCompleter(backend)
-        completer.completions_for(LineContext("set advanced; volume sh", 20, 22, "sh"))
-        assert backend.help_calls == [build_help_query("set advanced; volume")]
+        completer.completions_for(LineContext("set advanced; volume sh", 21, 23, "sh"))
+        assert backend.help_calls == [
+            build_help_query("set advanced; volume sh"),
+            build_help_query("set advanced; volume"),
+        ]
 
 
 class TestSplitChainedLineWithOffset:
