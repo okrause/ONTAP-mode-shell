@@ -1,0 +1,4 @@
+(igroup)
+  add                         Add initiators to an initiator group
+  create                      Create a new initiator group
+  show                        Display a list of initiator groups

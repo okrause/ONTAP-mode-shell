@@ -1,0 +1,8 @@
+[ -vserver <vserver name> ]        Vserver Name (default:
+                                     gcnv-svm-01)
+   { [-path] <path>                  LUN Path
+   |  -volume <volume name>          Volume Name
+    [ -qtree <qtree name> ]          Qtree Name (default: "")
+     [-lun] <text> }                 LUN Name
+   [-igroup|-g] <text (size 1..96)>  Igroup Name
+  [[-lun-id] {0..4095}]              LUN ID
