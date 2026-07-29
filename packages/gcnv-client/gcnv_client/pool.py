@@ -39,6 +39,16 @@ def classify_lif_service(services: list[str]) -> str:
     return ",".join(sorted(services))
 
 
+def _is_empty_cli_result(error: object) -> bool:
+    """True when ONTAP CLI reports a missing entry (empty result set)."""
+    if not isinstance(error, str):
+        return False
+    lowered = error.lower()
+    return "404" in error and (
+        "entry doesn't exist" in lowered or "entry does not exist" in lowered
+    )
+
+
 class OntapModePool:
     """Google Cloud NetApp Volumes Flex Unified ONTAP-mode storage pool.
 
@@ -139,6 +149,8 @@ class OntapModePool:
                 "\n\nThis is your first recorded login.\n\n"
             )
         if "error" in resp:
+            if _is_empty_cli_result(resp["error"]):
+                return ""
             return resp["error"]
         return resp
 

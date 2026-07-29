@@ -33,3 +33,25 @@ class TestSnapshotNames:
         assert set(pool.snapshot_names()) == {"snap-a", "snap-b"}
         assert pool.snapshot_names(volume="vol1") == ["snap-a"]
 
+
+class TestOntapCli:
+    _EMPTY_404 = (
+        'code: 404, message: {\n  "code":  404,\n  '
+        '"message":  "entry doesn\'t exist"\n}'
+    )
+
+    def test_empty_result_returns_empty_string(self):
+        pool = OntapModePool.__new__(OntapModePool)
+        pool.ontap_post = lambda _urn, _payload: {"error": self._EMPTY_404}
+        assert pool.ontap_cli("volume show -volume missing") == ""
+
+    def test_other_errors_are_returned(self):
+        pool = OntapModePool.__new__(OntapModePool)
+        pool.ontap_post = lambda _urn, _payload: {"error": "code: 400, message: bad"}
+        assert pool.ontap_cli("bad command") == "code: 400, message: bad"
+
+    def test_successful_output_is_unchanged(self):
+        pool = OntapModePool.__new__(OntapModePool)
+        pool.ontap_post = lambda _urn, _payload: {"output": "volume show\n"}
+        assert pool.ontap_cli("volume show") == "volume show\n"
+

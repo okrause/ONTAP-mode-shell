@@ -189,7 +189,8 @@ def _run_interactive(pool: OntapModePool) -> None:
                 break
             if cmd:
                 result = pool.ontap_cli(cmd)
-                print(result)
+                if result:
+                    print(result)
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
             break
@@ -208,7 +209,9 @@ def main() -> None:
 
     if args.command:
         try:
-            print(pool.ontap_cli(args.command))
+            result = pool.ontap_cli(args.command)
+            if result:
+                print(result)
         except Exception as exc:
             print(f"Error: {exc}")
             sys.exit(1)
