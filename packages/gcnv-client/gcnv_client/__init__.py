@@ -3,6 +3,7 @@
 from gcnv_client.auth import BearerAuth
 from gcnv_client.logging_config import configure_logging
 from gcnv_client.pool import OntapLif, OntapModePool
+from gcnv_client.pool_urn import ParsedStoragePoolUrn, parse_storage_pool_urn
 from gcnv_client.volumes import NetappVolumes
 
 __all__ = [
@@ -10,5 +11,7 @@ __all__ = [
     "NetappVolumes",
     "OntapLif",
     "OntapModePool",
+    "ParsedStoragePoolUrn",
     "configure_logging",
+    "parse_storage_pool_urn",
 ]

@@ -12,7 +12,7 @@ try:
 except ImportError:
     import readline
 
-from gcnv_client import NetappVolumes, OntapLif, OntapModePool, configure_logging
+from gcnv_client import NetappVolumes, OntapLif, OntapModePool, configure_logging, parse_storage_pool_urn
 
 configure_logging()
 
@@ -38,7 +38,17 @@ def get_arguments() -> argparse.Namespace:
     )
     parser.add_argument("--project", help="GCP project ID or number")
     parser.add_argument("--location", help="GCP location or region")
-    parser.add_argument("--storage-pool", required=True, help="Storage pool name")
+    parser.add_argument(
+        "--storage-pool",
+        help="Storage pool name (required unless --pool-urn is set)",
+    )
+    parser.add_argument(
+        "--pool-urn",
+        help=(
+            "Full storage pool resource name, e.g. "
+            "projects/PROJECT/locations/LOCATION/storagePools/POOL"
+        ),
+    )
     parser.add_argument(
         "--command",
         help="ONTAP CLI command to execute (optional; interactive shell if omitted)",
@@ -47,24 +57,53 @@ def get_arguments() -> argparse.Namespace:
 
 
 def _resolve_project_and_location(args: argparse.Namespace) -> tuple[str, str]:
-    if args.project:
-        project_id = args.project
-    else:
-        project_id = (
-            subprocess.check_output(["gcloud", "config", "get-value", "project"])
-            .decode()
-            .strip()
-        )
-
-    if args.location:
-        location = args.location
-    else:
-        location = (
-            subprocess.check_output(["gcloud", "config", "get-value", "compute/region"])
-            .decode()
-            .strip()
-        )
+    project_id = args.project or _gcloud_project()
+    location = args.location or _gcloud_location()
     return project_id, location
+
+
+def _gcloud_project() -> str:
+    return (
+        subprocess.check_output(["gcloud", "config", "get-value", "project"])
+        .decode()
+        .strip()
+    )
+
+
+def _gcloud_location() -> str:
+    return (
+        subprocess.check_output(["gcloud", "config", "get-value", "compute/region"])
+        .decode()
+        .strip()
+    )
+
+
+def _resolve_pool_connection(args: argparse.Namespace) -> tuple[str, str]:
+    if args.pool_urn:
+        parsed = parse_storage_pool_urn(args.pool_urn)
+        if args.project and parsed.project and args.project != parsed.project:
+            raise SystemExit(
+                f"--project {args.project!r} conflicts with pool URN project "
+                f"{parsed.project!r}"
+            )
+        if args.location and args.location != parsed.location:
+            raise SystemExit(
+                f"--location {args.location!r} conflicts with pool URN location "
+                f"{parsed.location!r}"
+            )
+        if args.storage_pool and args.storage_pool != parsed.pool_name:
+            raise SystemExit(
+                f"--storage-pool {args.storage_pool!r} conflicts with pool URN "
+                f"pool {parsed.pool_name!r}"
+            )
+        project_id = parsed.project or args.project or _gcloud_project()
+        return project_id, parsed.api_path
+
+    if not args.storage_pool:
+        raise SystemExit("Either --pool-urn or --storage-pool is required")
+
+    project_id, location = _resolve_project_and_location(args)
+    return project_id, f"/locations/{location}/storagePools/{args.storage_pool}"
 
 
 def _print_lifs(lifs: list[OntapLif]) -> None:
@@ -162,8 +201,7 @@ def _run_interactive(pool: OntapModePool) -> None:
 
 def main() -> None:
     args = get_arguments()
-    project_id, location = _resolve_project_and_location(args)
-    pool_urn = f"/locations/{location}/storagePools/{args.storage_pool}"
+    project_id, pool_urn = _resolve_pool_connection(args)
 
     nv = NetappVolumes(project=project_id)
     pool = OntapModePool(nv, pool_urn)

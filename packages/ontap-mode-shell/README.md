@@ -9,6 +9,8 @@ Depends on workspace libraries `gcnv-client` (API/auth) and `ontap-completer` (c
 ```bash
 uv sync
 uv run ontap-mode-shell --storage-pool <pool-name>
+# or with a full pool resource name:
+uv run ontap-mode-shell --pool-urn projects/PROJECT/locations/LOCATION/storagePools/POOL
 ```
 
 Command history is stored in `~/.ontap_mode_shell_history`.
