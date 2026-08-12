@@ -26,6 +26,20 @@ class ParsedStoragePoolUrn:
         """Relative API path appended to ``/projects/{project}``."""
         return f"/locations/{self.location}/storagePools/{self.pool_name}"
 
+    def full_resource_name(self, project: str) -> str:
+        """Return ``projects/{project}/locations/.../storagePools/...``."""
+        if self.project:
+            return f"projects/{self.project}/locations/{self.location}/storagePools/{self.pool_name}"
+        return f"projects/{project}/locations/{self.location}/storagePools/{self.pool_name}"
+
+
+def format_storage_pool_urn(project: str, api_path: str) -> str:
+    """Build a full pool resource name from project ID and API path."""
+    path = api_path.lstrip("/")
+    if path.startswith("projects/"):
+        return path
+    return f"projects/{project}/{path}"
+
 
 def parse_storage_pool_urn(urn: str) -> ParsedStoragePoolUrn:
     """Extract project, location, and pool name from a storage pool URN.

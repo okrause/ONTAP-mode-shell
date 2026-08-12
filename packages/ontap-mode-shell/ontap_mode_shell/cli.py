@@ -153,7 +153,7 @@ def _print_banner(pool: OntapModePool) -> None:
         "\033[92mGCNV ONTAP-mode shell\033[0m "
         "(help-driven TAB completion)\n"
     )
-    print(f"Pool: \033[33m{pool.google_pool_urn}\033[0m")
+    print(f"Pool: \033[33m{pool.full_google_pool_urn}\033[0m")
     print(f"Cluster: \033[94m{pool.ontap_cluster_name}\033[0m")
     _print_svms(pool)
     _print_lifs(pool.ontap_lifs)

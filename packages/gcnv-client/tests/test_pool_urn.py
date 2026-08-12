@@ -1,6 +1,6 @@
 import pytest
 
-from gcnv_client.pool_urn import parse_storage_pool_urn
+from gcnv_client.pool_urn import format_storage_pool_urn, parse_storage_pool_urn
 
 
 class TestParseStoragePoolUrn:
@@ -47,3 +47,18 @@ class TestParseStoragePoolUrn:
     def test_invalid_urn(self):
         with pytest.raises(ValueError, match="Invalid storage pool URN"):
             parse_storage_pool_urn("projects/p1/locations/us-east1-b")
+
+
+class TestFormatStoragePoolUrn:
+    def test_builds_full_name_from_api_path(self):
+        assert (
+            format_storage_pool_urn(
+                "my-project", "/locations/us-east1-b/storagePools/my-pool"
+            )
+            == "projects/my-project/locations/us-east1-b/storagePools/my-pool"
+        )
+
+    def test_passes_through_existing_full_name(self):
+        full = "projects/p1/locations/us-east1-b/storagePools/pool1"
+        assert format_storage_pool_urn("other-project", full) == full
+

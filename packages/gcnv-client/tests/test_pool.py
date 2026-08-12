@@ -55,3 +55,14 @@ class TestOntapCli:
         pool.ontap_post = lambda _urn, _payload: {"output": "volume show\n"}
         assert pool.ontap_cli("volume show") == "volume show\n"
 
+
+class TestFullGooglePoolUrn:
+    def test_full_urn_includes_project(self):
+        pool = OntapModePool.__new__(OntapModePool)
+        pool.netappvolumes = type("NV", (), {"projectId": "my-project"})()
+        pool.google_pool_urn = "/locations/us-east1-b/storagePools/my-pool"
+        assert (
+            pool.full_google_pool_urn
+            == "projects/my-project/locations/us-east1-b/storagePools/my-pool"
+        )
+

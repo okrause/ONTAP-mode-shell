@@ -9,6 +9,7 @@ from typing import Any
 
 import requests
 
+from gcnv_client.pool_urn import format_storage_pool_urn
 from gcnv_client.volumes import NetappVolumes
 
 logger = logging.getLogger(__name__)
@@ -84,6 +85,13 @@ class OntapModePool:
             )
             for lif in lifs
         ]
+
+    @property
+    def full_google_pool_urn(self) -> str:
+        """Full resource name: ``projects/.../locations/.../storagePools/...``."""
+        return format_storage_pool_urn(
+            self.netappvolumes.projectId, self.google_pool_urn
+        )
 
     def __str__(self) -> str:
         return (
