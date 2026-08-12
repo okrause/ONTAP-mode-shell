@@ -28,12 +28,20 @@ uv sync
 uv run ontap-mode-shell --storage-pool <pool-name>
 ```
 
+Or pass the full Google Cloud resource name (project, location, and pool are parsed from the URN):
+
+```bash
+uv run ontap-mode-shell --pool-urn projects/PROJECT/locations/LOCATION/storagePools/POOL
+```
+
 Optional flags:
 
 | Flag | Description |
 |------|-------------|
-| `--project` | GCP project ID (default: `gcloud config get-value project`) |
-| `--location` | GCP region (default: `gcloud config get-value compute/region`) |
+| `--pool-urn` | Full storage pool resource name (alternative to `--project` + `--location` + `--storage-pool`) |
+| `--project` | GCP project ID (default: `gcloud config get-value project`; ignored when `--pool-urn` includes a project) |
+| `--location` | GCP region or zone (default: `gcloud config get-value compute/region`; ignored when `--pool-urn` is set) |
+| `--storage-pool` | Storage pool name (required unless `--pool-urn` is set) |
 | `--command` | Run one command and exit instead of starting the shell |
 
 Examples:
@@ -42,6 +50,9 @@ Examples:
 # Use explicit project and region
 uv run ontap-mode-shell --project my-project --location us-central1 --storage-pool my-pool
 
+# Full pool resource name
+uv run ontap-mode-shell --pool-urn projects/my-project/locations/us-east1-b/storagePools/my-pool
+
 # Single command, no interactive prompt
 uv run ontap-mode-shell --storage-pool my-pool --command "volume show"
 ```
@@ -49,6 +60,10 @@ uv run ontap-mode-shell --storage-pool my-pool --command "volume show"
 On startup the shell prints the pool URN, cluster name, SVM/aggregate table, and LIF table. The prompt is `{cluster_name}> `.
 
 Type `exit` to quit. Command history is saved to `~/.ontap_mode_shell_history`.
+
+## Empty results (HTTP 404)
+
+On GCNV ONTAP-mode, `show` commands that match **no objects** return HTTP 404 with `"entry doesn't exist"` instead of an empty table. The shell treats this as a successful command with zero rows: **no output is printed** and no error is shown. This matches native ONTAP behavior for an empty result set.
 
 ## What TAB completes
 
@@ -72,6 +87,8 @@ You can always type ` ?` explicitly for help on any line.
 While typing the command before any `-flag`, TAB completes the next token from the subcommand list in `?` help.
 
 Example: `vol<TAB>` → `volume `; `volume cr<TAB>` → `volume create ` (when help lists `create`).
+
+**Probe-on-type:** when you are typing a partial command word, TAB first sends `'<partial-line> ?'` to ONTAP (not just the parent path). ONTAP resolves globally unique shortcuts and abbreviations — e.g. `export-pol<TAB>` → `export-policy `, `igr<TAB>` → `igroup `. If the probe returns parameter help for a leaf command (e.g. `igroup sh`), the completer falls back to the parent subcommand list and offers `show`.
 
 ### 3. Flag names
 
@@ -122,7 +139,7 @@ cd packages/ontap-completer && uv sync --extra dev && uv run pytest
 cd ../gcnv-client && uv sync --extra dev && uv run pytest
 ```
 
-Parser rules and fixtures are documented in the repo’s `ontap-auto-completion.md`.
+Parser rules and fixtures are documented in `dev-tools/ontap-auto-completion.md` (in the parent ONTAP-mode repo).
 
 ## Debug
 
